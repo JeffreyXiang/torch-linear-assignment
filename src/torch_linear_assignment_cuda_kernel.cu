@@ -19,36 +19,6 @@
 typedef unsigned char uint8_t;
 
 
-int SMPCores(int device_index)
-{
-  cudaDeviceProp devProp;
-  cudaGetDeviceProperties(&devProp, device_index);
-  switch (devProp.major){
-  case 2: // Fermi
-    if (devProp.minor == 1)
-      return 48;
-    else return 32;
-  case 3: // Kepler
-    return 192;
-  case 5: // Maxwell
-    return 128;
-  case 6: // Pascal
-    if ((devProp.minor == 1) || (devProp.minor == 2)) return 128;
-    else if (devProp.minor == 0) return 64;
-  case 7: // Volta and Turing
-    if ((devProp.minor == 0) || (devProp.minor == 5)) return 64;
-  case 8: // Ampere
-    if (devProp.minor == 0) return 64;
-    else if (devProp.minor == 6) return 128;
-    else if (devProp.minor == 9) return 128; // ada lovelace
-  case 9: // Hopper
-    if (devProp.minor == 0) return 128;
-  // Unknown device;
-  }
-  return 128;
-}
-
-
 template <typename scalar_t>
 __device__ __forceinline__
 void array_fill(scalar_t *start, scalar_t *stop, scalar_t value) {
@@ -230,7 +200,7 @@ void solve_cuda_batch(c10::ScalarType scalar_type,
   torch::Tensor SC = torch::empty({bs * nc}, uint8_opt);
   torch::Tensor remaining = torch::empty({bs * nc}, int_opt);
 
-  static const int blockSize = SMPCores(device_index);
+  static const int blockSize = 128;
   int gridSize = (bs + blockSize - 1) / blockSize;
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream(device_index);
   solve_cuda_kernel_batch<<<gridSize, blockSize, 0, stream.stream()>>>(
