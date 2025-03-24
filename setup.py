@@ -22,9 +22,6 @@ else:
     archs = os.getenv("GPU_ARCHS", "native").split(";")
     cc_flag = [f"--offload-arch={arch}" for arch in archs]
     
-with open("requirements.txt", "r") as fp:
-    required_packages = [line.strip() for line in fp.readlines()]
-
 setup(
     name="torch-linear-assignment",
     version="0.0.3",
@@ -48,5 +45,4 @@ setup(
     cmdclass={
         'build_ext': BuildExtension
     },
-    install_requires=required_packages,
 )

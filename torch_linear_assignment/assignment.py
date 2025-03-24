@@ -1,18 +1,5 @@
 import torch
-
 import torch_linear_assignment._backend as backend
-from scipy.optimize import linear_sum_assignment
-
-
-def batch_linear_assignment_cpu(cost):
-    b, w, t = cost.shape
-    matching = torch.full([b, w], -1, dtype=torch.long, device=cost.device)
-    for i in range(b):
-        workers, tasks = linear_sum_assignment(cost[i].numpy(), maximize=False)  # (N, 2).
-        workers = torch.from_numpy(workers)
-        tasks = torch.from_numpy(tasks)
-        matching[i].scatter_(0, workers, tasks)
-    return matching
 
 
 def batch_linear_assignment_cuda(cost):
@@ -45,10 +32,8 @@ def batch_linear_assignment(cost):
     """
     if cost.ndim != 3:
         raise ValueError("Need 3-dimensional tensor with shape (B, W, T).")
-    if backend.has_cuda() and cost.is_cuda:
-        return batch_linear_assignment_cuda(cost)
-    else:
-        return batch_linear_assignment_cpu(cost)
+    assert cost.is_cuda, 'Must be a cuda tensor'
+    return batch_linear_assignment_cuda(cost)
 
 
 def assignment_to_indices(assignment):
